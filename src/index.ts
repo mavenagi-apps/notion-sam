@@ -1,4 +1,5 @@
-import { MavenAGIClient } from 'mavenagi';
+import {MavenAGIClient} from "mavenagi";
+import { ingestKnowledgeBase } from "@/utils/notion";
 
 export default {
   async preInstall({
@@ -20,24 +21,40 @@ export default {
     agentId: string;
     settings: AppSettings;
   }) {
-    const mavenAgi = new MavenAGIClient({
+    const client = new MavenAGIClient({
       organizationId: organizationId,
       agentId: agentId,
-    });    
+    });
+
     // Setup actions, users, knowledge, etc
+    await ingestKnowledgeBase({
+      client: client,
+      apiToken: process.env.NOTION_API_TOKEN || '',
+    });
   },
 
-  async executeAction({
+  async knowledgeBaseRefreshed({
     organizationId,
     agentId,
-    actionId,
-    parameters,
-    user,
+    knowledgeBaseId,
+    settings
   }: {
     organizationId: string;
     agentId: string;
-    actionId: string;
-    parameters: Record<string, any>;
-    user: any;
-  }) {},
+    knowledgeBaseId: { referenceId: string };
+    settings: AppSettings;
+  }) {
+    const client = new MavenAGIClient({
+      organizationId: organizationId,
+      agentId: agentId,
+    });
+
+    // Setup actions, users, knowledge, etc
+    await ingestKnowledgeBase({
+      client: client,
+      apiToken: process.env.NOTION_API_TOKEN || '',
+      knowledgeBaseId: knowledgeBaseId.referenceId
+    });
+
+  },
 };

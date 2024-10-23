@@ -6,7 +6,7 @@ Every time code is deployed either via the App Studio or by commiting to this re
 
 `https://<appId>.onmaven.app`
 
-You can start editing the page by modifying `app/route.ts`.
+You can start editing the page by modifying `app/page.tsx`.
 
 To edit Maven App hooks modify `src/index.ts`.
 
