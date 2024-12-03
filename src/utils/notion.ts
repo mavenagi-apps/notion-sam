@@ -2,6 +2,7 @@ import { Client } from '@notionhq/client';
 import { MavenAGIClient } from "mavenagi";
 import { NotionToMarkdown } from "notion-to-md";
 import Bottleneck from "bottleneck";
+import {KnowledgeDocumentRequest} from "mavenagi/api";
 
 // rate-limit all API calls
 const mavenApiLimiter = new Bottleneck({
@@ -14,15 +15,10 @@ const notionApiLimiter = new Bottleneck({
   minTime: 100
 });
 
-interface ProcessedNotionPage {
-    title: string;
-    content: string;
-    contentType: 'MARKDOWN';
-    knowledgeDocumentId: { referenceId: string },
-}
-
 // this is fixed for now
 const kbId = 'notion';
+
+const pageSize = 100;
 
 export async function fetchNotionPages(notion: Client) {
   let pages: any[] = [];
@@ -36,6 +32,7 @@ export async function fetchNotionPages(notion: Client) {
                   value: 'page',
               },
               start_cursor: nextCursor ?? undefined,
+              page_size: pageSize,
           });
           pages = pages.concat(results);
           cursor = has_more ? next_cursor : undefined;
@@ -47,7 +44,7 @@ export async function fetchNotionPages(notion: Client) {
 
 export async function processNotionPages(notion: Client, pages: any[]) {
     const n2m = new NotionToMarkdown({ notionClient: notion });
-    let processedPages: ProcessedNotionPage[] = [];
+    let processedPages: KnowledgeDocumentRequest[] = [];
     for (const page of pages) {
         // Since Notion allows for a given database to configure any property name to hold the page title, we have to
         // loop to find it. For example, the 'title' could be in "Project Name" or "Title".
@@ -95,7 +92,7 @@ export const ingestKnowledgeBase = async ({ client, apiToken, knowledgeBaseId } 
   const kb = await client.knowledge.createOrUpdateKnowledgeBase({
     name: 'Notion Knowledge Base',
     type: 'API',
-    knowledgeBaseId: { referenceId: kbId },
+    knowledgeBaseId: { referenceId: knowledgeBaseId || kbId },
   });
 
   await client.knowledge.createKnowledgeBaseVersion(kb.knowledgeBaseId.referenceId, {
@@ -107,9 +104,9 @@ export const ingestKnowledgeBase = async ({ client, apiToken, knowledgeBaseId } 
 
   // write pages to KB
   await Promise.all(processedPages.map(async (page) => {
-      await mavenApiLimiter.schedule(() => client.knowledge.createKnowledgeDocument(kbId, page));
+      await mavenApiLimiter.schedule(() => client.knowledge.createKnowledgeDocument(knowledgeBaseId || kbId, page));
   }));
 
-  console.info(`Finalizing version for KB ${kbId}`);
-  await client.knowledge.finalizeKnowledgeBaseVersion(kbId);
+  console.info(`Finalizing version for KB ${knowledgeBaseId || kbId}`);
+  await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || kbId);
 }
