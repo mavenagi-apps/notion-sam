@@ -6,6 +6,10 @@ To install the app you will need to do the following:
 
 ## Run tests
     
-    ```bash 
+    ```npm run test```
+
+## Run the app
+
+    ```npm run dev```
 
 
