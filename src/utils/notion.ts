@@ -26,7 +26,7 @@ export async function fetchNotionPages(notion: Client) {
   do {
       await notionApiLimiter.schedule(async () => {
           const nextCursor = cursor;
-          const {has_more, next_cursor, results} = await notion.search({
+          const response = await notion.search({
               filter: {
                   property: 'object',
                   value: 'page',
@@ -34,7 +34,8 @@ export async function fetchNotionPages(notion: Client) {
               start_cursor: nextCursor ?? undefined,
               page_size: pageSize,
           });
-          pages = pages.concat(results);
+          const {has_more, next_cursor, results} = response;
+              pages = pages.concat(results);
           cursor = has_more ? next_cursor : undefined;
       });
   } while (cursor);
