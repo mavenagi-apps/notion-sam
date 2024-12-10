@@ -6,10 +6,10 @@ To install the app you will need to do the following:
 
 ## Run tests
     
-    ```npm run test```
+    ```pnpm run test```
 
 ## Run the app
 
-    ```npm run dev```
+    ```pnpm run dev```
 
 
