@@ -52,8 +52,10 @@ export async function processNotionPages(notion: Client, pages: any[]) {
         let pageTitle = '';
         for (let prop in pageProperties) {
           if (pageProperties[prop].type === "title") {
-              pageTitle = pageProperties[prop].title[0].text.content;
-              break;
+              if (pageProperties[prop].title && pageProperties[prop].title.length > 0 && pageProperties[prop].title[0].text) {
+                  pageTitle = pageProperties[prop].title[0].text.content;
+                  break;
+              }
           }
         }
 
@@ -80,6 +82,8 @@ export const ingestKnowledgeBase = async ({ client, apiToken, knowledgeBaseId } 
 
   // fetch notion pages
   const pages = await fetchNotionPages(notion);
+
+  console.info(`Notion: Found ${pages.length} pages`);
 
   // Just in case we had a past failure, finalize any old versions so we can start from scratch
   // TODO(maven): Make the platform more lenient so this isn't necessary
