@@ -66,12 +66,16 @@ export async function processNotionPages(notion: Client, pages: any[]) {
         const mdBlocks = await n2m.pageToMarkdown(page.id);
         const mdString = n2m.toMarkdownString(mdBlocks);
         const markdownContent = mdString.parent;
-        processedPages.push({
-            title: pageTitle,
-            content: markdownContent,
-            contentType: 'MARKDOWN',
-            knowledgeDocumentId: { referenceId: page.id },
-        });
+        if(markdownContent) {
+            processedPages.push({
+                title: pageTitle,
+                content: markdownContent,
+                contentType: 'MARKDOWN',
+                knowledgeDocumentId: {referenceId: page.id},
+            });
+        } else {
+            console.warn(`Skipping page with id ${page.id} due to missing content`);
+        }
     }
     return processedPages;
 }
