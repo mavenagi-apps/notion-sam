@@ -52,7 +52,7 @@ export async function processNotionPages(notion: Client, pages: any[]) {
         let pageTitle = '';
         for (let prop in pageProperties) {
           if (pageProperties[prop].type === "title") {
-              if (pageProperties[prop].title && pageProperties[prop].title.length > 0 && pageProperties[prop].title[0].text) {
+              if (pageProperties[prop]?.title && pageProperties[prop].title.length > 0 && pageProperties[prop].title[0]?.text) {
                   pageTitle = pageProperties[prop].title[0].text.content;
                   break;
               }
