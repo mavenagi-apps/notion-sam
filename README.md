@@ -1,4 +1,6 @@
-## App Template for [Maven AGI](https://developers.mavenagi.com/)
+## Notion
+
+This Maven App allows you sync specific Notion pages to your Maven knowledge base for training.
 
 [![License](https://img.shields.io/badge/license-APACHE2-blue.svg)](https://github.com/mavenagi-apps/template/blob/main/LICENSE) ![Coverage](https://gist.githubusercontent.com/mwflaher/46d409f23d2b17672adfa2dfe9b6b1f0/raw/coverage.svg) ![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=flat&logo=discord&logoColor=white)
 
