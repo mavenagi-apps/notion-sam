@@ -1,6 +1,8 @@
 import { SetupServerApi, setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
+// test the preInstall and postInstall hooks
+
 describe('Maven hooks', async () => {
   let server: SetupServerApi;
 
