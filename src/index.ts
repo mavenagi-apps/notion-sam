@@ -1,5 +1,6 @@
-import {MavenAGIClient} from "mavenagi";
-import { ingestKnowledgeBase } from "@/utils/notion";
+import { MavenAGIClient } from 'mavenagi';
+import { ingestKnowledgeBase } from '@/utils/notion';
+import {Client} from "@notionhq/client";
 
 export default {
   async preInstall({
@@ -10,7 +11,13 @@ export default {
     organizationId: string;
     agentId: string;
     settings: AppSettings;
-  }) {},
+  }) {
+    try {
+      new Client({ auth:  settings.apiToken });
+    } catch(e) {
+        throw new Error('Failed to connect to Notion API');
+    }
+  },
 
   async postInstall({
     organizationId,
@@ -29,7 +36,7 @@ export default {
     // Setup actions, users, knowledge, etc
     await ingestKnowledgeBase({
       client: client,
-      apiToken: process.env.NOTION_API_TOKEN || '',
+      apiToken: settings.apiToken,
     });
   },
 
@@ -37,7 +44,7 @@ export default {
     organizationId,
     agentId,
     knowledgeBaseId,
-    settings
+    settings,
   }: {
     organizationId: string;
     agentId: string;
@@ -52,9 +59,8 @@ export default {
     // Setup actions, users, knowledge, etc
     await ingestKnowledgeBase({
       client: client,
-      apiToken: process.env.NOTION_API_TOKEN || '',
-      knowledgeBaseId: knowledgeBaseId.referenceId
+      apiToken: settings.apiToken,
+      knowledgeBaseId: knowledgeBaseId.referenceId,
     });
-
   },
 };
