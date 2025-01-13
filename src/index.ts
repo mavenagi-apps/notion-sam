@@ -1,11 +1,9 @@
-import { MavenAGIClient } from 'mavenagi';
 import { ingestKnowledgeBase } from '@/utils/notion';
-import {Client} from "@notionhq/client";
+import { Client } from '@notionhq/client';
+import { MavenAGIClient } from 'mavenagi';
 
 export default {
   async preInstall({
-    organizationId,
-    agentId,
     settings,
   }: {
     organizationId: string;
@@ -13,12 +11,11 @@ export default {
     settings: AppSettings;
   }) {
     try {
-      new Client({ auth:  settings.apiToken });
-    } catch(e) {
-        throw new Error('Failed to connect to Notion API');
+      new Client({ auth: settings.apiToken });
+    } catch (e) {
+      throw new Error(`Failed to connect to Notion API: ${(e as Error).message}`);
     }
   },
-
   async postInstall({
     organizationId,
     agentId,
@@ -40,6 +37,9 @@ export default {
     });
   },
 
+  /**
+   * Handler for refresh of knowledge base
+   */
   async knowledgeBaseRefreshed({
     organizationId,
     agentId,
