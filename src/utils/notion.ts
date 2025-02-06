@@ -6,19 +6,13 @@ import { NotionToMarkdown } from 'notion-to-md';
 
 type NotionPage = SearchResponse['results'][number];
 
-// rate-limit all API calls
-const mavenApiLimiter = new Bottleneck({
-  maxConcurrent: 50,
-  minTime: 100,
-});
-
 const notionApiLimiter = new Bottleneck({
   maxConcurrent: 30,
   minTime: 100,
 });
 
 // this is fixed for now
-const kbId = 'notion';
+export const KB_ID = 'notion';
 
 const pageSize = 100;
 

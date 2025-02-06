@@ -1,4 +1,4 @@
-import { fetchNotionPages, processNotionPages } from '@/utils/notion';
+import { KB_ID, fetchNotionPages, processNotionPages } from '@/utils/notion';
 import { Client } from '@notionhq/client';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
@@ -9,9 +9,6 @@ const mavenApiLimiter = new Bottleneck({
   maxConcurrent: 50,
   minTime: 100,
 });
-
-// this is fixed for now
-const kbId = 'notion';
 
 async function ingestKnowledgeBase({
   client,
@@ -33,7 +30,7 @@ async function ingestKnowledgeBase({
   // Just in case we had a past failure, finalize any old versions so we can start from scratch
   // TODO(maven): Make the platform more lenient so this isn't necessary
   try {
-    await client.knowledge.finalizeKnowledgeBaseVersion(kbId);
+    await client.knowledge.finalizeKnowledgeBaseVersion(KB_ID);
   } catch (error) {
     // Ignored
     console.warn('Failed to finalize old version', error);
@@ -42,7 +39,7 @@ async function ingestKnowledgeBase({
   const kb = await client.knowledge.createOrUpdateKnowledgeBase({
     name: 'Notion Knowledge Base',
     type: 'API',
-    knowledgeBaseId: { referenceId: knowledgeBaseId || kbId },
+    knowledgeBaseId: { referenceId: knowledgeBaseId || KB_ID },
   });
 
   await client.knowledge.createKnowledgeBaseVersion(kb.knowledgeBaseId.referenceId, {
@@ -56,13 +53,13 @@ async function ingestKnowledgeBase({
   await Promise.all(
     processedPages.map(async (page) => {
       await mavenApiLimiter.schedule(() =>
-        client.knowledge.createKnowledgeDocument(knowledgeBaseId || kbId, page)
+        client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
       );
     })
   );
 
-  console.info(`Finalizing version for KB ${knowledgeBaseId || kbId}`);
-  await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || kbId);
+  console.info(`Finalizing version for KB ${knowledgeBaseId || KB_ID}`);
+  await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || KB_ID);
 }
 
 export default {
