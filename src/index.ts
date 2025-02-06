@@ -56,6 +56,8 @@ export default {
       agentId: agentId,
     });
 
+    console.info('Knowledge base refreshed', knowledgeBaseId);
+
     // Setup actions, users, knowledge, etc
     await ingestKnowledgeBase({
       client: client,
