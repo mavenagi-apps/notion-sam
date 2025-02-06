@@ -55,7 +55,6 @@ export default {
       organizationId: organizationId,
       agentId: agentId,
     });
-
     console.info('Knowledge base refreshed', knowledgeBaseId);
 
     // Setup actions, users, knowledge, etc
