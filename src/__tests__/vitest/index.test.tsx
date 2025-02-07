@@ -63,7 +63,9 @@ describe('Maven hooks', () => {
         finalizeKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
       };
 
-      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(mockKnowledge as any);
+      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(
+        mockKnowledge as unknown as MavenAGIClient['knowledge']
+      );
 
       await hooks.postInstall({
         organizationId: 'org1',
@@ -94,7 +96,9 @@ describe('Maven hooks', () => {
         finalizeKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
       };
 
-      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(mockKnowledge as any);
+      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(
+        mockKnowledge as unknown as MavenAGIClient['knowledge']
+      );
 
       await hooks.knowledgeBaseRefreshed({
         organizationId: 'org1',
