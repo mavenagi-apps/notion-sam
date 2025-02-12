@@ -1,0 +1,4 @@
+{
+  "name": "Notion",
+  "postCreateCommand": "pnpm install"
+}
