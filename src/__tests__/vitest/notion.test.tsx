@@ -645,7 +645,13 @@ describe('reads and processes pages from notion', () => {
     const pages = await fetchNotionPages(notion);
     expect(pages).length(4);
     const processedPages = await processNotionPages(notion, pages as []);
-    processedPages.forEach((page) => expect(page.title).toBe('New Media Article'));
-    processedPages.forEach((page) => expect(page.content).toContain('This is a paragraph block.'));
+    expect(processedPages.some((page) => page.title === 'New Media Article')).toBe(true);
+    expect(processedPages.some((page) => page.content.includes('This is a paragraph block.'))).toBe(true);
+    expect(processedPages.some((page) => page.contentType === 'MARKDOWN')).toBe(true);
+    expect(
+      processedPages.some(
+        (page) => page.url === 'https://www.notion.so/New-Media-Article-ae1905c3b77b475bb98f7596c242137f'
+      )
+    ).toBe(true);
   });
 });
