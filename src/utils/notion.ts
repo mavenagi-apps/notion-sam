@@ -7,8 +7,8 @@ import { NotionToMarkdown } from 'notion-to-md';
 type NotionPage = SearchResponse['results'][number];
 
 const notionApiLimiter = new Bottleneck({
-  maxConcurrent: 30,
-  minTime: 100,
+  maxConcurrent: 25,
+  minTime: 200,
 });
 
 // this is fixed for now
