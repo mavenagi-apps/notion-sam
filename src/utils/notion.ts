@@ -71,6 +71,7 @@ export async function processNotionPages(notion: Client, pages: PageObjectRespon
         title: pageTitle,
         content: markdownContent,
         contentType: 'MARKDOWN',
+        url: page.url,
         knowledgeDocumentId: { referenceId: page.id },
       });
     } else {
