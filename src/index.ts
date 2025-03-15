@@ -71,7 +71,10 @@ export default {
     settings: AppSettings;
   }) {
     try {
-      new Client({ auth: settings.apiToken });
+      const notion = new Client({ auth: settings.apiToken });
+
+      // run a search to see if we have access to the Notion API
+      await notion.search({ filter: { property: 'object', value: 'page' }, page_size: 1 });
     } catch (e) {
       throw new Error(`Failed to connect to Notion API: ${(e as Error).message}`);
     }
