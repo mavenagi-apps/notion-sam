@@ -1,67 +1,63 @@
-import { MavenAGI, MavenAGIClient } from 'mavenagi';
+import { KB_ID, fetchNotionPages, processNotionPages } from '@/utils/notion';
+import { Client } from '@notionhq/client';
+import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import Bottleneck from 'bottleneck';
+import { MavenAGIClient } from 'mavenagi';
 
-export const SAMPLE_KNOWLEDGEBASE_NAME = 'sample-knowledge';
-export const SAMPLE_KNOWLEDGE_ID = 'sample-knowledge';
+// rate-limit Maven API calls
+const mavenApiLimiter = new Bottleneck({
+  maxConcurrent: 50,
+  minTime: 100,
+});
 
-export const upsertSampleKnowledge = async (
-  client: MavenAGIClient,
-  {
-    title,
-    content,
-    slug,
-  }: {
-    title: string;
-    content: string;
-    slug: string;
-  }
-) => {
+export async function ingestKnowledgeBase({
+  client,
+  apiToken,
+  knowledgeBaseId,
+}: {
+  client: MavenAGIClient;
+  apiToken: string;
+  knowledgeBaseId?: string;
+}) {
+  const notion = new Client({ auth: apiToken });
+  console.info(`Notion: Start ingest for KB`);
+
+  // fetch notion pages
+  const pages = await fetchNotionPages(notion);
+
+  console.info(`Notion: Found ${pages.length} pages`);
+
+  // Just in case we had a past failure, finalize any old versions so we can start from scratch
+  // TODO(maven): Make the platform more lenient so this isn't necessary
   try {
-    await client.knowledge.createOrUpdateKnowledgeBase({
-      name: SAMPLE_KNOWLEDGEBASE_NAME,
-      type: MavenAGI.KnowledgeBaseType.Api,
-      knowledgeBaseId: { referenceId: SAMPLE_KNOWLEDGE_ID },
-    });
-
-    await client.knowledge.createKnowledgeBaseVersion(SAMPLE_KNOWLEDGE_ID, {
-      type: 'FULL',
-    });
-
-    await client.knowledge.createKnowledgeDocument(SAMPLE_KNOWLEDGE_ID, {
-      title,
-      content,
-      contentType: 'MARKDOWN',
-      knowledgeDocumentId: { referenceId: slug },
-    });
-
-    await client.knowledge.finalizeKnowledgeBaseVersion(SAMPLE_KNOWLEDGE_ID);
+    await client.knowledge.finalizeKnowledgeBaseVersion(KB_ID);
   } catch (error) {
-    console.error('Error creating knowledge base', error);
-    throw error;
+    // Ignored
+    console.warn('Failed to finalize old version', error);
   }
-};
 
-export const refreshSampleKnowledge = async (
-  client: MavenAGIClient,
-  {
-    title,
-    content,
-    slug,
-  }: {
-    title: string;
-    content: string;
-    slug: string;
-  }
-) => {
-  await client.knowledge.createKnowledgeBaseVersion(SAMPLE_KNOWLEDGE_ID, {
+  const kb = await client.knowledge.createOrUpdateKnowledgeBase({
+    name: 'Notion Knowledge Base',
+    type: 'API',
+    knowledgeBaseId: { referenceId: knowledgeBaseId || KB_ID },
+  });
+
+  await client.knowledge.createKnowledgeBaseVersion(kb.knowledgeBaseId.referenceId, {
     type: 'FULL',
   });
 
-  await client.knowledge.createKnowledgeDocument(SAMPLE_KNOWLEDGE_ID, {
-    title,
-    content,
-    contentType: 'MARKDOWN',
-    knowledgeDocumentId: { referenceId: slug },
-  });
+  // process notion pages
+  const processedPages = await processNotionPages(notion, pages as unknown as PageObjectResponse[]);
 
-  await client.knowledge.finalizeKnowledgeBaseVersion(SAMPLE_KNOWLEDGE_ID);
-};
+  // write pages to KB
+  await Promise.all(
+    processedPages.map(async (page) => {
+      await mavenApiLimiter.schedule(() =>
+        client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
+      );
+    })
+  );
+
+  console.info(`Finalizing version for KB ${knowledgeBaseId || KB_ID}`);
+  await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || KB_ID);
+}
