@@ -1,14 +1,45 @@
-import { Client } from '@notionhq/client';
+import { APIResponseError, Client } from '@notionhq/client';
 import { PageObjectResponse, SearchResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
 import { KnowledgeDocumentRequest } from 'mavenagi/api';
 import { NotionToMarkdown } from 'notion-to-md';
 
+export enum RetryableStatusCodes {
+  TOO_MANY_REQUESTS = 429,
+  BAD_GATEWAY = 502,
+  SERVICE_UNAVAILABLE = 503,
+  GATEWAY_TIMEOUT = 504,
+}
+
 type NotionPage = SearchResponse['results'][number];
 
+// Notion API rate limits
+// https://developers.notion.com/reference/request-limits
 const notionApiLimiter = new Bottleneck({
-  maxConcurrent: 25,
-  minTime: 200,
+  maxConcurrent: 2,
+  minTime: 300, // 3 requests per second
+});
+
+notionApiLimiter.on('failed', async (error, info) => {
+  console.warn('Notion.APIResponseError', error);
+  const apiError = error as APIResponseError;
+  if (!Object.values(RetryableStatusCodes).includes(apiError?.status)) {
+    return;
+  }
+
+  const { retryCount } = info;
+  const backoffs = [0.2, 0.4, 0.8, 1, 2];
+  if (backoffs.length <= retryCount) {
+    // stop retrying after 5 attempts
+    return;
+  }
+  const defaultRetryAfter = backoffs[retryCount] * 1000;
+  const headers = apiError.headers as Headers;
+  if (headers.get('retry-after')?.length) {
+    const retryAfterSeconds = parseInt(headers.get('retry-after')!, 10);
+    return retryAfterSeconds * 1000;
+  }
+  return defaultRetryAfter;
 });
 
 // this is fixed for now
