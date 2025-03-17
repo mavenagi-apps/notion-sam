@@ -1,4 +1,5 @@
 import { KB_ID } from '@/utils/notion';
+import * as notion from '@notionhq/client';
 import { MavenAGIClient } from 'mavenagi';
 import { SetupServerApi, setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -42,6 +43,17 @@ describe('Maven hooks', () => {
 
   describe('preInstall', () => {
     it('should validate Notion API token', async () => {
+      const mockNotion = {
+        search: vi.fn().mockResolvedValue({
+          type: 'page_or_database',
+          page_or_database: {},
+          object: 'list',
+          next_cursor: null,
+          has_more: false,
+          results: [],
+        }),
+      } as unknown as notion.Client;
+      vi.spyOn(notion, 'Client').mockImplementation(() => mockNotion);
       await expect(
         hooks.preInstall({
           organizationId: 'org1',
@@ -49,6 +61,7 @@ describe('Maven hooks', () => {
           settings: mockSettings,
         })
       ).resolves.not.toThrow();
+      expect(mockNotion.search).toHaveBeenCalled();
     });
   });
 
