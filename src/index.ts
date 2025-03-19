@@ -1,7 +1,6 @@
+import { inngest } from '@/inngest/client';
+import { INGEST_KB_EVENT, INGEST_KB_ID } from '@/inngest/constants';
 import { Client } from '@notionhq/client';
-import { MavenAGIClient } from 'mavenagi';
-
-import { ingestKnowledgeBase } from './lib/knowledge';
 
 export default {
   async preInstall({
@@ -29,15 +28,14 @@ export default {
     agentId: string;
     settings: AppSettings;
   }) {
-    const client = new MavenAGIClient({
-      organizationId: organizationId,
-      agentId: agentId,
-    });
-
-    // Setup actions, users, knowledge, etc
-    await ingestKnowledgeBase({
-      client: client,
-      apiToken: settings.apiToken,
+    await inngest.send({
+      name: INGEST_KB_EVENT,
+      id: `${INGEST_KB_ID}-${organizationId}-${agentId}`,
+      data: {
+        organizationId,
+        agentId,
+        settings,
+      },
     });
   },
 
@@ -55,16 +53,15 @@ export default {
     knowledgeBaseId: { referenceId: string };
     settings: AppSettings;
   }) {
-    const client = new MavenAGIClient({
-      organizationId: organizationId,
-      agentId: agentId,
-    });
-    console.info('Knowledge base refreshed', knowledgeBaseId);
-    // Setup actions, users, knowledge, etc
-    await ingestKnowledgeBase({
-      client: client,
-      apiToken: settings.apiToken,
-      knowledgeBaseId: knowledgeBaseId.referenceId,
+    await inngest.send({
+      name: INGEST_KB_EVENT,
+      id: `${INGEST_KB_ID}-${organizationId}-${agentId}`,
+      data: {
+        organizationId,
+        agentId,
+        settings,
+        knowledgeBaseId: knowledgeBaseId.referenceId,
+      },
     });
   },
 };

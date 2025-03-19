@@ -1,43 +1,17 @@
-import { KB_ID } from '@/utils/notion';
+import { inngest } from '@/inngest/client';
 import * as notion from '@notionhq/client';
-import { MavenAGIClient } from 'mavenagi';
-import { SetupServerApi, setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import hooks from '../../index';
 
-// Mock the notion utils
-vi.mock('@/utils/notion', () => ({
-  KB_ID: 'test-kb-id',
-  fetchNotionPages: vi.fn().mockResolvedValue([{ id: 'page1' }]),
-  processNotionPages: vi.fn().mockResolvedValue([
-    {
-      knowledgeDocumentId: { referenceId: 'doc1' },
-      title: 'Test Page',
-      content: 'Test Content',
-      contentType: 'MARKDOWN',
-    },
-  ]),
-}));
-
 describe('Maven hooks', () => {
-  let server: SetupServerApi;
   const mockSettings = {
     apiToken: 'test-token',
   };
-
-  beforeAll(() => {
-    server = setupServer();
-    server.listen();
-  });
-
   afterEach(() => {
-    server.resetHandlers();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
-
   afterAll(() => {
-    server.close();
     vi.restoreAllMocks();
   });
 
@@ -67,51 +41,28 @@ describe('Maven hooks', () => {
 
   describe('postInstall', () => {
     it('should ingest knowledge base successfully', async () => {
-      const mockKnowledge = {
-        createOrUpdateKnowledgeBase: vi
-          .fn()
-          .mockResolvedValue({ knowledgeBaseId: { referenceId: KB_ID } }),
-        createKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
-        createKnowledgeDocument: vi.fn().mockResolvedValue({}),
-        finalizeKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
-      };
-
-      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(
-        mockKnowledge as unknown as MavenAGIClient['knowledge']
-      );
-
+      const inngestSendMock = vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
       await hooks.postInstall({
         organizationId: 'org1',
         agentId: 'agent1',
         settings: mockSettings,
       });
-
-      expect(mockKnowledge.createOrUpdateKnowledgeBase).toHaveBeenCalledWith({
-        name: 'Notion Knowledge Base',
-        type: 'API',
-        knowledgeBaseId: { referenceId: KB_ID },
+      expect(inngestSendMock).toHaveBeenCalledWith({
+        name: 'app/notion/ingest-knowledge-base',
+        id: 'ingest-knowledge-base-org1-agent1',
+        data: {
+          organizationId: 'org1',
+          agentId: 'agent1',
+          settings: mockSettings,
+        },
       });
-      expect(mockKnowledge.createKnowledgeBaseVersion).toHaveBeenCalled();
-      expect(mockKnowledge.createKnowledgeDocument).toHaveBeenCalled();
-      expect(mockKnowledge.finalizeKnowledgeBaseVersion).toHaveBeenCalled();
     });
   });
 
   describe('knowledgeBaseRefreshed', () => {
     it('should refresh knowledge base with specified ID', async () => {
+      const inngestSendMock = vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
       const customKbId = 'custom-kb-id';
-      const mockKnowledge = {
-        createOrUpdateKnowledgeBase: vi
-          .fn()
-          .mockResolvedValue({ knowledgeBaseId: { referenceId: customKbId } }),
-        createKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
-        createKnowledgeDocument: vi.fn().mockResolvedValue({}),
-        finalizeKnowledgeBaseVersion: vi.fn().mockResolvedValue({}),
-      };
-
-      vi.spyOn(MavenAGIClient.prototype, 'knowledge', 'get').mockReturnValue(
-        mockKnowledge as unknown as MavenAGIClient['knowledge']
-      );
 
       await hooks.knowledgeBaseRefreshed({
         organizationId: 'org1',
@@ -120,15 +71,16 @@ describe('Maven hooks', () => {
         settings: mockSettings,
       });
 
-      expect(mockKnowledge.createOrUpdateKnowledgeBase).toHaveBeenCalledWith({
-        name: 'Notion Knowledge Base',
-        type: 'API',
-        knowledgeBaseId: { referenceId: customKbId },
+      expect(inngestSendMock).toHaveBeenCalledWith({
+        name: 'app/notion/ingest-knowledge-base',
+        id: 'ingest-knowledge-base-org1-agent1',
+        data: {
+          organizationId: 'org1',
+          agentId: 'agent1',
+          settings: mockSettings,
+          knowledgeBaseId: customKbId,
+        },
       });
-      expect(mockKnowledge.createKnowledgeDocument).toHaveBeenCalledWith(
-        customKbId,
-        expect.any(Object)
-      );
     });
   });
 });
