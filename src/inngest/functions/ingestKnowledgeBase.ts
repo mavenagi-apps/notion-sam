@@ -1,9 +1,8 @@
+import { inngest } from '@/inngest/client';
+import { INGEST_KB_EVENT, INGEST_KB_ID } from '@/inngest/constants';
+import type { IngestKBEventData } from '@/inngest/types';
 import { ingestKnowledgeBase } from '@/lib/knowledge';
 import { MavenAGIClient } from 'mavenagi';
-
-import { inngest } from '../client';
-import { INGEST_KB_EVENT, INGEST_KB_ID } from '../constants';
-import type { IngestKBEventData } from '../types';
 
 export const ingestKnowledgeBaseFunction = inngest.createFunction(
   {
