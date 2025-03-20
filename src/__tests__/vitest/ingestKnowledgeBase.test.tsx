@@ -1,12 +1,14 @@
+import { inngest } from '@/inngest/client';
 import { ingestKnowledgeBase } from '@/lib';
 import { KB_ID } from '@/utils/notion';
+import { BaseContext } from 'inngest';
 import { MavenAGIClient } from 'mavenagi';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock the notion utils
 vi.mock('@/utils/notion', () => ({
   KB_ID: 'test-kb-id',
-  fetchNotionPages: vi.fn().mockResolvedValue([{ id: 'page1' }]),
+  fetchNextNotionPages: vi.fn().mockResolvedValue([{ id: 'page1' }]),
   processNotionPages: vi.fn().mockResolvedValue([
     {
       knowledgeDocumentId: { referenceId: 'doc1' },
@@ -20,6 +22,13 @@ vi.mock('@/utils/notion', () => ({
 describe('ingestKnowledgeBase', () => {
   const mockSettings = {
     apiToken: 'test-token',
+  };
+
+  const inngestStepMock = {
+    run: vi.fn().mockImplementation(async (name, fn) => {
+      console.log(`Running step: ${name}`);
+      await fn();
+    }),
   };
 
   it('should ingest knowledge base successfully', async () => {
@@ -39,6 +48,7 @@ describe('ingestKnowledgeBase', () => {
     await ingestKnowledgeBase({
       client: new MavenAGIClient({ agentId: 'agent1', organizationId: 'org1' }),
       apiToken: mockSettings.apiToken,
+      step: inngestStepMock as unknown as BaseContext<typeof inngest>['step'],
     });
 
     expect(mockKnowledge.createOrUpdateKnowledgeBase).toHaveBeenCalledWith({
@@ -70,6 +80,7 @@ describe('ingestKnowledgeBase', () => {
       client: new MavenAGIClient({ agentId: 'agent1', organizationId: 'org1' }),
       apiToken: mockSettings.apiToken,
       knowledgeBaseId: customKbId,
+      step: inngestStepMock as unknown as BaseContext<typeof inngest>['step'],
     });
 
     expect(mockKnowledge.createOrUpdateKnowledgeBase).toHaveBeenCalledWith({
