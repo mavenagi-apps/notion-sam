@@ -26,7 +26,7 @@ export async function ingestKnowledgeBase({
   const notion = new Client({ auth: apiToken });
   console.info(`Notion: Start ingest for KB`);
 
-  step.run('setup', async () => {
+  await step.run('setup', async () => {
     // Just in case we had a past failure, finalize any old versions so we can start from scratch
     // TODO(maven): Make the platform more lenient so this isn't necessary
     try {
