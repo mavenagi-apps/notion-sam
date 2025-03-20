@@ -43,6 +43,7 @@ export async function ingestKnowledgeBase({
 
   // fetch notion pages
   for await (const pages of fetchNotionPages(notion)) {
+    console.info(`Notion: Found ${pages.length} pages`);
     // process notion pages
     const processedPages = await processNotionPages(
       notion,
