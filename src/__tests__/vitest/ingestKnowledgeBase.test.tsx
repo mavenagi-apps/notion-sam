@@ -6,7 +6,9 @@ import { describe, expect, it, vi } from 'vitest';
 // Mock the notion utils
 vi.mock('@/utils/notion', () => ({
   KB_ID: 'test-kb-id',
-  fetchNotionPages: vi.fn().mockResolvedValue([{ id: 'page1' }]),
+  fetchNotionPages: vi.fn().mockImplementation(async function* () {
+    yield [{ id: 'page1' }];
+  }),
   processNotionPages: vi.fn().mockResolvedValue([
     {
       knowledgeDocumentId: { referenceId: 'doc1' },

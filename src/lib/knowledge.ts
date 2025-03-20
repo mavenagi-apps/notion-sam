@@ -22,11 +22,6 @@ export async function ingestKnowledgeBase({
   const notion = new Client({ auth: apiToken });
   console.info(`Notion: Start ingest for KB`);
 
-  // fetch notion pages
-  const pages = await fetchNotionPages(notion);
-
-  console.info(`Notion: Found ${pages.length} pages`);
-
   // Just in case we had a past failure, finalize any old versions so we can start from scratch
   // TODO(maven): Make the platform more lenient so this isn't necessary
   try {
@@ -46,17 +41,23 @@ export async function ingestKnowledgeBase({
     type: 'FULL',
   });
 
-  // process notion pages
-  const processedPages = await processNotionPages(notion, pages as unknown as PageObjectResponse[]);
+  // fetch notion pages
+  for await (const pages of fetchNotionPages(notion)) {
+    // process notion pages
+    const processedPages = await processNotionPages(
+      notion,
+      pages as unknown as PageObjectResponse[]
+    );
 
-  // write pages to KB
-  await Promise.all(
-    processedPages.map(async (page) => {
-      await mavenApiLimiter.schedule(() =>
-        client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
-      );
-    })
-  );
+    // write pages to KB
+    await Promise.all(
+      processedPages.map(async (page) => {
+        await mavenApiLimiter.schedule(() =>
+          client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
+        );
+      })
+    );
+  }
 
   console.info(`Finalizing version for KB ${knowledgeBaseId || KB_ID}`);
   await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || KB_ID);

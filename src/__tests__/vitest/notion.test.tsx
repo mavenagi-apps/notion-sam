@@ -634,23 +634,32 @@ vi.mock('@notionhq/client', () => {
 describe('reads pages from notion', () => {
   const notion: Client = new Client({ auth: 'foo' });
   it('fetches notion pages', async () => {
-    const pages = await fetchNotionPages(notion);
-    expect(pages).length(4);
+    const allPages = [];
+    for await (const pages of fetchNotionPages(notion)) {
+      allPages.push(...pages);
+    }
+    expect(allPages).length(4);
   });
 });
 
 describe('reads and processes pages from notion', () => {
   const notion: Client = new Client({ auth: 'foo' });
   it('processes notion pages correctly', async () => {
-    const pages = await fetchNotionPages(notion);
-    expect(pages).length(4);
-    const processedPages = await processNotionPages(notion, pages as []);
+    const allPages = [];
+    for await (const pages of fetchNotionPages(notion)) {
+      allPages.push(...pages);
+    }
+    expect(allPages).length(4);
+    const processedPages = await processNotionPages(notion, allPages as []);
     expect(processedPages.some((page) => page.title === 'New Media Article')).toBe(true);
-    expect(processedPages.some((page) => page.content.includes('This is a paragraph block.'))).toBe(true);
+    expect(processedPages.some((page) => page.content.includes('This is a paragraph block.'))).toBe(
+      true
+    );
     expect(processedPages.some((page) => page.contentType === 'MARKDOWN')).toBe(true);
     expect(
       processedPages.some(
-        (page) => page.url === 'https://www.notion.so/New-Media-Article-ae1905c3b77b475bb98f7596c242137f'
+        (page) =>
+          page.url === 'https://www.notion.so/New-Media-Article-ae1905c3b77b475bb98f7596c242137f'
       )
     ).toBe(true);
   });

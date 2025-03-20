@@ -47,26 +47,33 @@ export const KB_ID = 'notion';
 
 const pageSize = 100;
 
-export async function fetchNotionPages(notion: Client) {
+export async function fetchNextNotionPages(notion: Client, cursor: string | null | undefined) {
+  let pages: NotionPage[] = [];
+  await notionApiLimiter.schedule(async () => {
+    const nextCursor = cursor;
+    const { has_more, next_cursor, results } = await notion.search({
+      filter: {
+        property: 'object',
+        value: 'page',
+      },
+      start_cursor: nextCursor ?? undefined,
+      page_size: pageSize,
+    });
+    pages = pages.concat(results);
+    cursor = has_more ? next_cursor : undefined;
+  });
+
+  return { pages, cursor };
+}
+
+export async function* fetchNotionPages(notion: Client) {
   let pages: NotionPage[] = [];
   let cursor: string | null | undefined = undefined;
   do {
-    await notionApiLimiter.schedule(async () => {
-      const nextCursor = cursor;
-      const { has_more, next_cursor, results } = await notion.search({
-        filter: {
-          property: 'object',
-          value: 'page',
-        },
-        start_cursor: nextCursor ?? undefined,
-        page_size: pageSize,
-      });
-      pages = pages.concat(results);
-      cursor = has_more ? next_cursor : undefined;
-    });
+    let results: NotionPage[] = [];
+    ({ cursor, pages: results } = await fetchNextNotionPages(notion, cursor));
+    yield results;
   } while (cursor);
-
-  return pages;
 }
 
 export async function processNotionPages(notion: Client, pages: PageObjectResponse[]) {
