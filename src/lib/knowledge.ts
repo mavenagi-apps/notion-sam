@@ -3,7 +3,7 @@ import { KB_ID, fetchNextNotionPages, processNotionPages } from '@/utils/notion'
 import { Client } from '@notionhq/client';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
-import { BaseContext, StepOptionsOrId } from 'inngest';
+import { BaseContext } from 'inngest';
 import { MavenAGIClient } from 'mavenagi';
 
 // rate-limit Maven API calls
