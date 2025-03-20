@@ -29,8 +29,8 @@
   "dependencies": {
     "@notionhq/client": "^2.2.15",
     "bottleneck": "^2.19.5",
-    "inngest": "^3.28.0",
-    "mavenagi": "1.0.2",
+    "inngest": "^3.32.9",
+    "mavenagi": "^1.0.5",
     "next": "^15.0.3",
     "notion-to-md": "^3.1.1",
     "react": "^18.3.1",
