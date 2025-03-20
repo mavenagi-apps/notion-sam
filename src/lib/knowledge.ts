@@ -68,7 +68,7 @@ export async function ingestKnowledgeBase({
     });
   } while (cursor);
 
-  step.run('finalize', async () => {
+  await step.run('finalize', async () => {
     console.info(`Finalizing version for KB ${knowledgeBaseId || KB_ID}`);
     await client.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId || KB_ID);
   });
