@@ -59,7 +59,7 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
       start_cursor: nextCursor ?? undefined,
       page_size: pageSize,
     });
-    pages = pages.concat(results);
+    pages = results;
     cursor = has_more ? next_cursor : undefined;
   });
 
@@ -67,7 +67,6 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
 }
 
 export async function* fetchNotionPages(notion: Client) {
-  let pages: NotionPage[] = [];
   let cursor: string | null | undefined = undefined;
   do {
     let results: NotionPage[] = [];
