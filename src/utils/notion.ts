@@ -66,15 +66,6 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
   return { pages, cursor };
 }
 
-export async function* fetchNotionPages(notion: Client) {
-  let cursor: string | null | undefined = undefined;
-  do {
-    let results: NotionPage[] = [];
-    ({ cursor, pages: results } = await fetchNextNotionPages(notion, cursor));
-    yield results;
-  } while (cursor);
-}
-
 export async function processNotionPages(notion: Client, pages: PageObjectResponse[]) {
   const n2m = new NotionToMarkdown({ notionClient: notion });
   const processedPages: KnowledgeDocumentRequest[] = [];

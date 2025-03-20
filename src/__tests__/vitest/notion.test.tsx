@@ -1,4 +1,4 @@
-import { fetchNotionPages, processNotionPages } from '@/utils/notion';
+import { fetchNextNotionPages, processNotionPages } from '@/utils/notion';
 import { Client } from '@notionhq/client';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -634,22 +634,19 @@ vi.mock('@notionhq/client', () => {
 describe('reads pages from notion', () => {
   const notion: Client = new Client({ auth: 'foo' });
   it('fetches notion pages', async () => {
-    const allPages = [];
-    for await (const pages of fetchNotionPages(notion)) {
-      allPages.push(...pages);
-    }
-    expect(allPages).length(4);
+    const { pages: page1 } = await fetchNextNotionPages(notion, null);
+    expect(page1).length(2);
+
+    const { pages: page2 } = await fetchNextNotionPages(notion, 'next-cursor');
+    expect(page2).length(2);
   });
 });
 
 describe('reads and processes pages from notion', () => {
   const notion: Client = new Client({ auth: 'foo' });
   it('processes notion pages correctly', async () => {
-    const allPages = [];
-    for await (const pages of fetchNotionPages(notion)) {
-      allPages.push(...pages);
-    }
-    expect(allPages).length(4);
+    const { pages: allPages } = await fetchNextNotionPages(notion, null);
+    expect(allPages).length(2);
     const processedPages = await processNotionPages(notion, allPages as []);
     expect(processedPages.some((page) => page.title === 'New Media Article')).toBe(true);
     expect(processedPages.some((page) => page.content.includes('This is a paragraph block.'))).toBe(
