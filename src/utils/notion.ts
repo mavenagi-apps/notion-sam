@@ -67,7 +67,12 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
 }
 
 export async function processNotionPages(notion: Client, pages: PageObjectResponse[]) {
-  const n2m = new NotionToMarkdown({ notionClient: notion });
+  const n2m = new NotionToMarkdown({
+    notionClient: notion,
+    config: {
+      parseChildPages: false, // we only want the top-level page content... referecened pages show up in the search results
+    },
+  });
   const processedPages: KnowledgeDocumentRequest[] = [];
   for (const page of pages) {
     // Since Notion allows for a given database to configure any property name to hold the page title, we have to
