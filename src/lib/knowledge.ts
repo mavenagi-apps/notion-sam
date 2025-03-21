@@ -23,7 +23,20 @@ export async function ingestKnowledgeBase({
   knowledgeBaseId?: string;
   step: BaseContext<typeof inngest>['step'];
 }) {
-  const notion = new Client({ auth: apiToken });
+  const notion = new Client({
+    auth: apiToken,
+    fetch: (url, init) => {
+      const useCache = url.startsWith('https://api.notion.com/v1/blocks/');
+      return fetch(url, {
+        ...init,
+        next: useCache
+          ? {
+              revalidate: 3600, // 1 hour cache
+            }
+          : undefined,
+      });
+    },
+  });
   console.info(`Notion: Start ingest for KB`);
 
   await step.run('setup', async () => {
