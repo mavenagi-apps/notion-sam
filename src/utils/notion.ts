@@ -45,7 +45,7 @@ notionApiLimiter.on('failed', async (error, info) => {
 // this is fixed for now
 export const KB_ID = 'notion';
 
-const pageSize = 100;
+const pageSize = 25;
 
 export async function fetchNextNotionPages(notion: Client, cursor: string | null | undefined) {
   let pages: NotionPage[] = [];
