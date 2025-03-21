@@ -1,4 +1,4 @@
-import { APIResponseError, Client } from '@notionhq/client';
+import { APIResponseError, Client, RequestTimeoutError } from '@notionhq/client';
 import { PageObjectResponse, SearchResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
 import { KnowledgeDocumentRequest } from 'mavenagi/api';
@@ -23,7 +23,10 @@ const notionApiLimiter = new Bottleneck({
 notionApiLimiter.on('failed', async (error, info) => {
   console.warn('Notion.APIResponseError', error);
   const apiError = error as APIResponseError;
-  if (!Object.values(RetryableStatusCodes).includes(apiError?.status)) {
+  if (
+    !Object.values(RetryableStatusCodes).includes(apiError?.status) &&
+    !(error instanceof RequestTimeoutError)
+  ) {
     return;
   }
 
@@ -34,8 +37,8 @@ notionApiLimiter.on('failed', async (error, info) => {
     return;
   }
   const defaultRetryAfter = backoffs[retryCount] * 1000;
-  const headers = apiError.headers as Headers;
-  if (headers.get('retry-after')?.length) {
+  const headers = apiError?.headers as Headers | null;
+  if (headers?.get('retry-after')?.length) {
     const retryAfterSeconds = parseInt(headers.get('retry-after')!, 10);
     return retryAfterSeconds * 1000;
   }
@@ -45,7 +48,7 @@ notionApiLimiter.on('failed', async (error, info) => {
 // this is fixed for now
 export const KB_ID = 'notion';
 
-const pageSize = 100;
+const pageSize = 25;
 
 export async function fetchNextNotionPages(notion: Client, cursor: string | null | undefined) {
   let pages: NotionPage[] = [];
@@ -67,7 +70,12 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
 }
 
 export async function processNotionPages(notion: Client, pages: PageObjectResponse[]) {
-  const n2m = new NotionToMarkdown({ notionClient: notion });
+  const n2m = new NotionToMarkdown({
+    notionClient: notion,
+    config: {
+      parseChildPages: false, // we only want the top-level page content... referecened pages show up in the search results
+    },
+  });
   const processedPages: KnowledgeDocumentRequest[] = [];
   for (const page of pages) {
     // Since Notion allows for a given database to configure any property name to hold the page title, we have to
@@ -91,19 +99,25 @@ export async function processNotionPages(notion: Client, pages: PageObjectRespon
       console.warn(`Skipping page with id ${page.id} due to missing title`);
       continue;
     }
-    const mdBlocks = await notionApiLimiter.schedule(() => n2m.pageToMarkdown(page.id));
-    const mdString = n2m.toMarkdownString(mdBlocks);
-    const markdownContent = mdString.parent;
-    if (markdownContent) {
-      processedPages.push({
-        title: pageTitle,
-        content: markdownContent,
-        contentType: 'MARKDOWN',
-        url: page.url,
-        knowledgeDocumentId: { referenceId: page.id },
-      });
-    } else {
-      console.warn(`Skipping page with id ${page.id} due to missing content`);
+    try {
+      const mdBlocks = await notionApiLimiter.schedule(() => n2m.pageToMarkdown(page.id));
+      const mdString = n2m.toMarkdownString(mdBlocks);
+      const markdownContent = mdString.parent;
+      if (markdownContent) {
+        processedPages.push({
+          title: pageTitle,
+          content: markdownContent,
+          contentType: 'MARKDOWN',
+          url: page.url,
+          knowledgeDocumentId: { referenceId: page.id },
+        });
+      } else {
+        console.warn(`Skipping page with id ${page.id} due to missing content`);
+      }
+    } catch (error) {
+      if ((error as APIResponseError)?.status === 404) {
+        console.warn(`Skipping page with id ${page.id} due to missing content`);
+      }
     }
   }
   return processedPages;
