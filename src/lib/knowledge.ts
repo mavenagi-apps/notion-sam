@@ -37,9 +37,9 @@ export async function ingestKnowledgeBase({
       });
     },
   });
-  console.info(`Notion: Start ingest for KB`);
 
   await step.run('setup', async () => {
+    console.info(`Notion: Start ingest for KB`);
     // Just in case we had a past failure, finalize any old versions so we can start from scratch
     // TODO(maven): Make the platform more lenient so this isn't necessary
     try {
