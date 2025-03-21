@@ -1,4 +1,4 @@
-import { APIResponseError, Client } from '@notionhq/client';
+import { APIResponseError, Client, RequestTimeoutError } from '@notionhq/client';
 import { PageObjectResponse, SearchResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
 import { KnowledgeDocumentRequest } from 'mavenagi/api';
@@ -23,7 +23,10 @@ const notionApiLimiter = new Bottleneck({
 notionApiLimiter.on('failed', async (error, info) => {
   console.warn('Notion.APIResponseError', error);
   const apiError = error as APIResponseError;
-  if (!Object.values(RetryableStatusCodes).includes(apiError?.status)) {
+  if (
+    !Object.values(RetryableStatusCodes).includes(apiError?.status) &&
+    !(error instanceof RequestTimeoutError)
+  ) {
     return;
   }
 
@@ -34,8 +37,8 @@ notionApiLimiter.on('failed', async (error, info) => {
     return;
   }
   const defaultRetryAfter = backoffs[retryCount] * 1000;
-  const headers = apiError.headers as Headers;
-  if (headers.get('retry-after')?.length) {
+  const headers = apiError?.headers as Headers | null;
+  if (headers?.get('retry-after')?.length) {
     const retryAfterSeconds = parseInt(headers.get('retry-after')!, 10);
     return retryAfterSeconds * 1000;
   }
