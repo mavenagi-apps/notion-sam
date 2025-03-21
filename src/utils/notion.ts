@@ -99,19 +99,25 @@ export async function processNotionPages(notion: Client, pages: PageObjectRespon
       console.warn(`Skipping page with id ${page.id} due to missing title`);
       continue;
     }
-    const mdBlocks = await notionApiLimiter.schedule(() => n2m.pageToMarkdown(page.id));
-    const mdString = n2m.toMarkdownString(mdBlocks);
-    const markdownContent = mdString.parent;
-    if (markdownContent) {
-      processedPages.push({
-        title: pageTitle,
-        content: markdownContent,
-        contentType: 'MARKDOWN',
-        url: page.url,
-        knowledgeDocumentId: { referenceId: page.id },
-      });
-    } else {
-      console.warn(`Skipping page with id ${page.id} due to missing content`);
+    try {
+      const mdBlocks = await notionApiLimiter.schedule(() => n2m.pageToMarkdown(page.id));
+      const mdString = n2m.toMarkdownString(mdBlocks);
+      const markdownContent = mdString.parent;
+      if (markdownContent) {
+        processedPages.push({
+          title: pageTitle,
+          content: markdownContent,
+          contentType: 'MARKDOWN',
+          url: page.url,
+          knowledgeDocumentId: { referenceId: page.id },
+        });
+      } else {
+        console.warn(`Skipping page with id ${page.id} due to missing content`);
+      }
+    } catch (error) {
+      if ((error as APIResponseError)?.status === 404) {
+        console.warn(`Skipping page with id ${page.id} due to missing content`);
+      }
     }
   }
   return processedPages;
