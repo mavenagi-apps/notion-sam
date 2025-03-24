@@ -104,6 +104,7 @@ export async function ingestKnowledgeBase({
             } catch (error) {
               if ((error as APIResponseError)?.status === 404) {
                 console.warn('Notion: ', (error as Error).message);
+                return;
               }
               throw error;
             }
