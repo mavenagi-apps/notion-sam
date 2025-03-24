@@ -1,5 +1,5 @@
 import { inngest } from '@/inngest/client';
-import { KB_ID, fetchNextNotionPages, processNotionPages } from '@/utils/notion';
+import { KB_ID, fetchNextNotionPages, fetchNotionPageMarkdown } from '@/utils/notion';
 import { APIResponseError, Client } from '@notionhq/client';
 import Bottleneck from 'bottleneck';
 import { BaseContext } from 'inngest';
@@ -78,6 +78,7 @@ export async function ingestKnowledgeBase({
       const nonEmptyPages = titledPages.filter((page) => {
         return !!page.title;
       });
+      console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
       return { cursor: nextCursor, pages: nonEmptyPages };
     });
     cursor = output.cursor;
@@ -87,20 +88,22 @@ export async function ingestKnowledgeBase({
           `process-${page.id}`,
           async (page) => {
             try {
-              const processedPage = await processNotionPages(
-                notion,
-                page.title!,
-                page.id,
-                page.url
-              );
-              if (processedPage) {
+              const content = await fetchNotionPageMarkdown(notion, page.id);
+              if (content) {
                 await mavenApiLimiter.schedule(() =>
-                  client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, processedPage)
+                  client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, {
+                    knowledgeDocumentId: page.id,
+                    title: page.title,
+                    content: content,
+                    contentType: 'MARKDOWN',
+                  })
                 );
+              } else {
+                console.warn('Notion: Skipping page due to empty content', page.id);
               }
             } catch (error) {
               if ((error as APIResponseError)?.status === 404) {
-                console.warn('Notion:: ', (error as Error).message);
+                console.warn('Notion: ', (error as Error).message);
               }
               throw error;
             }

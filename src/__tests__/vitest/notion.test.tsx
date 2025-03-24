@@ -1,4 +1,4 @@
-import { fetchNextNotionPages, processNotionPages } from '@/utils/notion';
+import { fetchNextNotionPages, fetchNotionPageMarkdown } from '@/utils/notion';
 import { Client } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
 import { describe, expect, it, vi } from 'vitest';
@@ -646,9 +646,7 @@ describe('reads pages from notion', () => {
 describe('reads and processes pages from notion', () => {
   const notion: Client = new Client({ auth: 'foo' });
   it('processes notion pages correctly', async () => {
-    const title = 'New Media Article';
     const id = 'ae1905c3-b77b-475b-b98f-7596c242137f';
-    const url = 'https://www.notion.so/New-Media-Article-ae1905c3b77b475bb98f7596c242137f';
     const content = 'This is a markdown string';
     const pageToMarkdownMock = vi.spyOn(NotionToMarkdown.prototype, 'pageToMarkdown');
     const toMarkdownStringMock = vi
@@ -657,14 +655,8 @@ describe('reads and processes pages from notion', () => {
         return { parent: content };
       });
 
-    const page = await processNotionPages(notion, title, id, url);
-
+    expect(await fetchNotionPageMarkdown(notion, id)).toBe(content);
     expect(pageToMarkdownMock).toHaveBeenCalledWith(id);
     expect(toMarkdownStringMock).toHaveBeenCalled();
-
-    expect(page!.title).toBe(title);
-    expect(page!.content).toBe(content);
-    expect(page!.contentType).toBe('MARKDOWN');
-    expect(page!.url).toBe(url);
   });
 });

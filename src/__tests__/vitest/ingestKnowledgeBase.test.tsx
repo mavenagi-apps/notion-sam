@@ -11,14 +11,7 @@ vi.mock('@/utils/notion', () => ({
   fetchNextNotionPages: vi.fn().mockResolvedValue({
     pages: [{ id: 'page1', properties: [{ type: 'title', title: [{ plain_text: 'title' }] }] }],
   }),
-  processNotionPages: vi.fn().mockResolvedValue([
-    {
-      knowledgeDocumentId: { referenceId: 'doc1' },
-      title: 'Test Page',
-      content: 'Test Content',
-      contentType: 'MARKDOWN',
-    },
-  ]),
+  fetchNotionPageMarkdown: vi.fn().mockResolvedValue('Test Content'),
 }));
 
 describe('ingestKnowledgeBase', () => {

@@ -74,7 +74,7 @@ export async function fetchNextNotionPages(notion: Client, cursor: string | null
   return { pages, cursor };
 }
 
-export async function processNotionPages(notion: Client, title: string, id: string, url: string) {
+export async function fetchNotionPageMarkdown(notion: Client, id: string) {
   const n2m = new NotionToMarkdown({
     notionClient: notion,
     config: {
@@ -85,13 +85,7 @@ export async function processNotionPages(notion: Client, title: string, id: stri
   const mdString = n2m.toMarkdownString(mdBlocks);
   const markdownContent = mdString.parent;
   if (markdownContent) {
-    return {
-      title: title,
-      content: markdownContent,
-      contentType: KnowledgeDocumentContentType.Markdown,
-      url: url,
-      knowledgeDocumentId: { referenceId: id },
-    } as KnowledgeDocumentRequest;
+    return markdownContent;
   } else {
     return null;
   }
