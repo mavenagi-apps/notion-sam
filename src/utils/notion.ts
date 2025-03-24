@@ -19,7 +19,7 @@ function getNotionRateLimiter() {
   });
 
   notionApiLimiter.on('failed', async (error, info) => {
-    console.log('Failed to execute Notion API request', error);
+    console.warn('Failed to execute Notion API request', error);
     const apiError = error as APIResponseError;
     if (
       !Object.values(RetryableStatusCodes).includes(apiError?.status) &&
