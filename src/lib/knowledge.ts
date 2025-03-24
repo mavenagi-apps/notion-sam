@@ -1,7 +1,6 @@
 import { inngest } from '@/inngest/client';
 import { KB_ID, fetchNextNotionPages, processNotionPages } from '@/utils/notion';
-import { Client } from '@notionhq/client';
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { APIResponseError, Client } from '@notionhq/client';
 import Bottleneck from 'bottleneck';
 import { BaseContext } from 'inngest';
 import { MavenAGIClient } from 'mavenagi';
@@ -62,23 +61,54 @@ export async function ingestKnowledgeBase({
 
   let cursor: string | null | undefined;
   do {
-    cursor = await step.run(`process-${cursor ? cursor : 'start'}`, async () => {
+    const output = await step.run(`search-${cursor ? cursor : 'start'}`, async () => {
       const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
-      const processedPages = await processNotionPages(
-        notion,
-        pages as unknown as PageObjectResponse[]
-      );
+      console.info(`Notion: Found ${pages.length} pages`);
+      const titledPages = pages.map((page) => {
+        const pageProperties = page.properties;
+        let pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
+          ?.title?.[0]?.plain_text;
 
-      // write pages to KB
-      await Promise.all(
-        processedPages.map(async (page) => {
-          await mavenApiLimiter.schedule(() =>
-            client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
-          );
-        })
-      );
-      return nextCursor;
+        return {
+          id: page.id,
+          title: pageTitle,
+          url: page.url,
+        };
+      });
+      const nonEmptyPages = titledPages.filter((page) => {
+        return !!page.title;
+      });
+      return { cursor: nextCursor, pages: nonEmptyPages };
     });
+    cursor = output.cursor;
+    await Promise.all(
+      output.pages.map((page) => {
+        return step.run(
+          `process-${page.id}`,
+          async (page) => {
+            try {
+              const processedPage = await processNotionPages(
+                notion,
+                page.title!,
+                page.id,
+                page.url
+              );
+              if (processedPage) {
+                await mavenApiLimiter.schedule(() =>
+                  client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, processedPage)
+                );
+              }
+            } catch (error) {
+              if ((error as APIResponseError)?.status === 404) {
+                console.warn('Notion:: ', (error as Error).message);
+              }
+              throw error;
+            }
+          },
+          page
+        );
+      })
+    );
   } while (cursor);
 
   await step.run('finalize', async () => {
