@@ -8,15 +8,10 @@ import { describe, expect, it, vi } from 'vitest';
 // Mock the notion utils
 vi.mock('@/utils/notion', () => ({
   KB_ID: 'test-kb-id',
-  fetchNextNotionPages: vi.fn().mockResolvedValue([{ id: 'page1' }]),
-  processNotionPages: vi.fn().mockResolvedValue([
-    {
-      knowledgeDocumentId: { referenceId: 'doc1' },
-      title: 'Test Page',
-      content: 'Test Content',
-      contentType: 'MARKDOWN',
-    },
-  ]),
+  fetchNextNotionPages: vi.fn().mockResolvedValue({
+    pages: [{ id: 'page1', properties: [{ type: 'title', title: [{ plain_text: 'title' }] }] }],
+  }),
+  fetchNotionPageMarkdown: vi.fn().mockResolvedValue('Test Content'),
 }));
 
 describe('ingestKnowledgeBase', () => {
@@ -25,9 +20,9 @@ describe('ingestKnowledgeBase', () => {
   };
 
   const inngestStepMock = {
-    run: vi.fn().mockImplementation(async (name, fn) => {
+    run: vi.fn().mockImplementation(async (name, fn, ...args) => {
       console.log(`Running step: ${name}`);
-      await fn();
+      return await fn(...args);
     }),
   };
 

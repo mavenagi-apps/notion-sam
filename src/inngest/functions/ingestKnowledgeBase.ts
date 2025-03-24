@@ -10,7 +10,7 @@ export const ingestKnowledgeBaseFunction = inngest.createFunction(
     id: INGEST_KB_ID,
     retries: 5,
     concurrency: {
-      limit: 1,
+      limit: 3,
       key: 'event.data.agentId' + '-' + 'event.data.organizationId',
     },
   },

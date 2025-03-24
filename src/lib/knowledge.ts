@@ -1,7 +1,6 @@
 import { inngest } from '@/inngest/client';
-import { KB_ID, fetchNextNotionPages, processNotionPages } from '@/utils/notion';
-import { Client } from '@notionhq/client';
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { KB_ID, fetchNextNotionPages, fetchNotionPageMarkdown } from '@/utils/notion';
+import { APIResponseError, Client } from '@notionhq/client';
 import Bottleneck from 'bottleneck';
 import { BaseContext } from 'inngest';
 import { MavenAGIClient } from 'mavenagi';
@@ -62,23 +61,57 @@ export async function ingestKnowledgeBase({
 
   let cursor: string | null | undefined;
   do {
-    cursor = await step.run(`process-${cursor ? cursor : 'start'}`, async () => {
+    const output = await step.run(`search-${cursor ? cursor : 'start'}`, async () => {
       const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
-      const processedPages = await processNotionPages(
-        notion,
-        pages as unknown as PageObjectResponse[]
-      );
+      console.info(`Notion: Found ${pages.length} pages`);
+      const titledPages = pages.map((page) => {
+        const pageProperties = page.properties;
+        const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
+          ?.title?.[0]?.plain_text;
 
-      // write pages to KB
-      await Promise.all(
-        processedPages.map(async (page) => {
-          await mavenApiLimiter.schedule(() =>
-            client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, page)
-          );
-        })
-      );
-      return nextCursor;
+        return {
+          id: page.id,
+          title: pageTitle,
+          url: page.url,
+        };
+      });
+      const nonEmptyPages = titledPages.filter((page) => {
+        return !!page.title;
+      });
+      console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
+      return { cursor: nextCursor, pages: nonEmptyPages };
     });
+    cursor = output.cursor;
+    await Promise.all(
+      output.pages.map((page) => {
+        return step.run(
+          `process-${page.id}`,
+          async (page) => {
+            try {
+              const content = await fetchNotionPageMarkdown(notion, page.id);
+              if (content) {
+                await mavenApiLimiter.schedule(() =>
+                  client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, {
+                    knowledgeDocumentId: { referenceId: page.id },
+                    title: page.title,
+                    content: content,
+                    contentType: 'MARKDOWN',
+                  })
+                );
+              } else {
+                console.warn('Notion: Skipping page due to empty content', page.id);
+              }
+            } catch (error) {
+              if ((error as APIResponseError)?.status === 404) {
+                console.warn('Notion: ', (error as Error).message);
+              }
+              throw error;
+            }
+          },
+          page
+        );
+      })
+    );
   } while (cursor);
 
   await step.run('finalize', async () => {
