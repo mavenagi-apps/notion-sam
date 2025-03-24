@@ -92,7 +92,7 @@ export async function ingestKnowledgeBase({
               if (content) {
                 await mavenApiLimiter.schedule(() =>
                   client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, {
-                    knowledgeDocumentId: page.id,
+                    knowledgeDocumentId: { referenceId: page.id },
                     title: page.title,
                     content: content,
                     contentType: 'MARKDOWN',
