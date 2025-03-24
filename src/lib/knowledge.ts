@@ -66,7 +66,7 @@ export async function ingestKnowledgeBase({
       console.info(`Notion: Found ${pages.length} pages`);
       const titledPages = pages.map((page) => {
         const pageProperties = page.properties;
-        let pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
+        const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
           ?.title?.[0]?.plain_text;
 
         return {

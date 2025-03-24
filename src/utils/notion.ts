@@ -1,11 +1,6 @@
 import { APIResponseError, Client, RequestTimeoutError } from '@notionhq/client';
-import {
-  PageObjectResponse,
-  PartialPageObjectResponse,
-  SearchResponse,
-} from '@notionhq/client/build/src/api-endpoints';
+import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import Bottleneck from 'bottleneck';
-import { KnowledgeDocumentContentType, KnowledgeDocumentRequest } from 'mavenagi/api';
 import { NotionToMarkdown } from 'notion-to-md';
 
 export enum RetryableStatusCodes {
