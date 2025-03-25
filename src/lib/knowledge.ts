@@ -67,30 +67,26 @@ export async function ingestKnowledgeBase({
 
   let cursor: string | null | undefined;
   do {
-    const output = await step.run(
-      `search-${cursor ? cursor : 'start'}`,
-      async (previousCursor) => {
-        const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
-        console.info(`Notion: Found ${pages.length} pages`, { nextCursor, previousCursor, cursor });
-        const titledPages = pages.map((page) => {
-          const pageProperties = page.properties;
-          const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
-            ?.title?.[0]?.plain_text;
+    const output = await step.run(`search-${cursor ? cursor : 'start'}`, async () => {
+      const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
+      console.info(`Notion: Found ${pages.length} pages`);
+      const titledPages = pages.map((page) => {
+        const pageProperties = page.properties;
+        const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
+          ?.title?.[0]?.plain_text;
 
-          return {
-            id: page.id,
-            title: pageTitle,
-            url: page.url,
-          } as NotionPageInfo;
-        });
-        const nonEmptyPages = titledPages.filter((page) => {
-          return !!page.title;
-        });
-        console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
-        return { cursor: nextCursor, pages: nonEmptyPages };
-      },
-      cursor
-    );
+        return {
+          id: page.id,
+          title: pageTitle,
+          url: page.url,
+        } as NotionPageInfo;
+      });
+      const nonEmptyPages = titledPages.filter((page) => {
+        return !!page.title;
+      });
+      console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
+      return { cursor: nextCursor, pages: nonEmptyPages };
+    });
     await step.run(
       `process-${cursor ? cursor : 'start'}`,
       async (pages: NotionPageInfo[]) => {
