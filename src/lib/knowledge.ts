@@ -5,6 +5,12 @@ import Bottleneck from 'bottleneck';
 import { BaseContext } from 'inngest';
 import { MavenAGIClient } from 'mavenagi';
 
+type NotionPageInfo = {
+  id: string;
+  title?: string;
+  url: string;
+};
+
 // rate-limit Maven API calls
 const mavenApiLimiter = new Bottleneck({
   maxConcurrent: 50,
@@ -61,39 +67,42 @@ export async function ingestKnowledgeBase({
 
   let cursor: string | null | undefined;
   do {
-    const output = await step.run(`search-${cursor ? cursor : 'start'}`, async () => {
-      const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
-      console.info(`Notion: Found ${pages.length} pages`);
-      const titledPages = pages.map((page) => {
-        const pageProperties = page.properties;
-        const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
-          ?.title?.[0]?.plain_text;
+    const output = await step.run(
+      `search-${cursor ? cursor : 'start'}`,
+      async (previousCursor) => {
+        const { pages, cursor: nextCursor } = await fetchNextNotionPages(notion, cursor);
+        console.info(`Notion: Found ${pages.length} pages`, { nextCursor, previousCursor, cursor });
+        const titledPages = pages.map((page) => {
+          const pageProperties = page.properties;
+          const pageTitle = Object.values(pageProperties).find((prop) => prop.type === 'title')
+            ?.title?.[0]?.plain_text;
 
-        return {
-          id: page.id,
-          title: pageTitle,
-          url: page.url,
-        };
-      });
-      const nonEmptyPages = titledPages.filter((page) => {
-        return !!page.title;
-      });
-      console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
-      return { cursor: nextCursor, pages: nonEmptyPages };
-    });
-    cursor = output.cursor;
-    await Promise.all(
-      output.pages.map((page) => {
-        return step.run(
-          `process-${page.id}`,
-          async (page) => {
-            try {
+          return {
+            id: page.id,
+            title: pageTitle,
+            url: page.url,
+          } as NotionPageInfo;
+        });
+        const nonEmptyPages = titledPages.filter((page) => {
+          return !!page.title;
+        });
+        console.info(`Notion: Found ${nonEmptyPages.length} non-empty pages`);
+        return { cursor: nextCursor, pages: nonEmptyPages };
+      },
+      cursor
+    );
+    await step.run(
+      `process-${cursor ? cursor : 'start'}`,
+      async (pages: NotionPageInfo[]) => {
+        try {
+          await Promise.all(
+            pages.map(async (page) => {
               const content = await fetchNotionPageMarkdown(notion, page.id);
               if (content) {
                 await mavenApiLimiter.schedule(() =>
                   client.knowledge.createKnowledgeDocument(knowledgeBaseId || KB_ID, {
                     knowledgeDocumentId: { referenceId: page.id },
-                    title: page.title,
+                    title: page.title!,
                     content: content,
                     contentType: 'MARKDOWN',
                   })
@@ -101,18 +110,19 @@ export async function ingestKnowledgeBase({
               } else {
                 console.warn('Notion: Skipping page due to empty content', page.id);
               }
-            } catch (error) {
-              if ((error as APIResponseError)?.status === 404) {
-                console.warn('Notion: ', (error as Error).message);
-                return;
-              }
-              throw error;
-            }
-          },
-          page
-        );
-      })
+            })
+          );
+        } catch (error) {
+          if ((error as APIResponseError)?.status === 404) {
+            console.warn('Notion: ', (error as Error).message);
+            return;
+          }
+          throw error;
+        }
+      },
+      output.pages
     );
+    cursor = output.cursor;
   } while (cursor);
 
   await step.run('finalize', async () => {

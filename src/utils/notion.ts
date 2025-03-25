@@ -14,7 +14,7 @@ function getNotionRateLimiter() {
   // Notion API rate limits
   // https://developers.notion.com/reference/request-limits
   const notionApiLimiter = new Bottleneck({
-    maxConcurrent: 1,
+    maxConcurrent: 3,
     minTime: 300, // 3 requests per second
   });
 
