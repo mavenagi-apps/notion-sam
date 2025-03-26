@@ -101,6 +101,7 @@ export async function ingestKnowledgeBase({
                     title: page.title!,
                     content: content,
                     contentType: 'MARKDOWN',
+                    url: page.url,
                   })
                 );
               } else {
