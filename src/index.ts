@@ -1,4 +1,4 @@
-import { refreshKnowledge } from "@lib/knowledge";
+import { refreshKnowledge } from '@lib/knowledge';
 import { Client } from '@notionhq/client';
 
 const hooks = {
@@ -8,13 +8,13 @@ const hooks = {
   async preInstall({
     organizationId,
     agentId,
-    settings
+    settings,
   }: {
     organizationId: string;
     agentId: string;
     settings: AppSettings;
   }) {
-    console.log("preInstall", organizationId, agentId);
+    console.log('preInstall', organizationId, agentId);
 
     try {
       const notion = new Client({ auth: settings.apiToken });
@@ -31,13 +31,13 @@ const hooks = {
   async postInstall({
     organizationId,
     agentId,
-    settings
+    settings,
   }: {
     organizationId: string;
     agentId: string;
     settings: AppSettings;
   }) {
-    console.log("postInstall", organizationId, agentId);
+    console.log('postInstall', organizationId, agentId);
 
     await refreshKnowledge(organizationId, agentId, settings);
   },
@@ -48,15 +48,17 @@ const hooks = {
   async knowledgeBaseRefreshed({
     organizationId,
     agentId,
+    knowledgeBaseId,
     settings,
   }: {
     organizationId: string;
     agentId: string;
+    knowledgeBaseId?: { referenceId: string };
     settings: AppSettings;
   }) {
     console.info('knowledgeBaseRefreshed', { organizationId, agentId });
 
-    await refreshKnowledge(organizationId, agentId, settings);
+    await refreshKnowledge(organizationId, agentId, settings, knowledgeBaseId?.referenceId);
   },
 
   /**
@@ -69,7 +71,7 @@ const hooks = {
     actionId: string;
     parameters: Record<string, string>;
   }) {
-    console.log("executeAction", actionId, parameters);
+    console.log('executeAction', actionId, parameters);
   },
 };
 

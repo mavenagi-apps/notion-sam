@@ -1,17 +1,19 @@
-import { inngest } from "@/inngest/client";
+import { inngest } from '@/inngest/client';
 import { INGEST_KB_EVENT, INGEST_KB_ID } from '@/inngest/constants';
 
 export async function refreshKnowledge(
   organizationId: string,
   agentId: string,
   settings: AppSettings,
+  knowledgeBaseId?: string
 ) {
-  console.info("Submitting refresh knowledge job with params:", {
+  console.info('Submitting refresh knowledge job with params:', {
     organizationId,
     agentId,
     settings,
+    knowledgeBaseId,
   });
-  
+
   await inngest.send({
     name: INGEST_KB_EVENT,
     id: `${INGEST_KB_ID}-${organizationId}-${agentId}`,
@@ -19,6 +21,7 @@ export async function refreshKnowledge(
       organizationId,
       agentId,
       settings,
+      ...(knowledgeBaseId && { knowledgeBaseId }),
     },
   });
 }

@@ -10,7 +10,7 @@ export function createMavenClient(organizationId: string, agentId: string): Mave
 export async function getConnectorConfig(
   organizationId: string,
   agentId: string
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   // Placeholder for connector configuration retrieval
   console.log(`Getting connector config for ${organizationId}/${agentId}`);
   return {};
@@ -19,7 +19,7 @@ export async function getConnectorConfig(
 export async function updateConnectorConfig(
   organizationId: string,
   agentId: string,
-  config: any
+  config: Record<string, unknown>
 ): Promise<void> {
   // Placeholder for connector configuration updates
   console.log(`Updating connector config for ${organizationId}/${agentId}`, config);
