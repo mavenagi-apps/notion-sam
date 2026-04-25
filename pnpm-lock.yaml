@@ -16,7 +16,7 @@ importers:
         version: 2.19.5
       inngest:
         specifier: ^3.54.0
-        version: 3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.0.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.7.3)(zod@3.22.5)
+        version: 3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.0.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.7.3)(zod@3.25.76)
       mavenagi:
         specifier: ^1.0.8
         version: 1.0.8
@@ -35,6 +35,9 @@ importers:
       react-markdown:
         specifier: ^9.0.1
         version: 9.0.3(@types/react@18.3.18)(react@18.3.1)
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@chromatic-com/storybook':
         specifier: ^3.2.2
@@ -7358,8 +7361,8 @@ packages:
     resolution: {integrity: sha512-GQHQqAopRhwU8Kt1DDM8NjibDXHC8eoh1erhGAJPEyveY9qqVeXvVikNKrDz69sHowPMorbPUrH/mx8c50eiBQ==}
     engines: {node: '>=18'}
 
-  zod@3.22.5:
-    resolution: {integrity: sha512-HqnGsCdVZ2xc0qWPLdO25WnseXThh0kEYKIdV5F/hTHO75hNZFp8thxSeHhiPrHZKrFTo1SOgkAj9po5bexZlw==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -12647,7 +12650,7 @@ snapshots:
 
   inline-style-parser@0.2.4: {}
 
-  inngest@3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.0.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.7.3)(zod@3.22.5):
+  inngest@3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.0.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.7.3)(zod@3.25.76):
     dependencies:
       '@bufbuild/protobuf': 2.2.4
       '@inngest/ai': 0.1.3
@@ -12674,7 +12677,7 @@ snapshots:
       strip-ansi: 5.2.0
       temporal-polyfill: 0.2.5
       ulid: 2.4.0
-      zod: 3.22.5
+      zod: 3.25.76
     optionalDependencies:
       next: 15.0.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       typescript: 5.7.3
@@ -15741,6 +15744,6 @@ snapshots:
 
   yoctocolors@2.1.1: {}
 
-  zod@3.22.5: {}
+  zod@3.25.76: {}
 
   zwitch@2.0.4: {}
